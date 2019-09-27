@@ -60,9 +60,16 @@ Yes sure ! But the NojeJS's path library has some limitations:
 - it is not native to the browser (you'll need to use browserify for example)
 - it doesn't support fine tuning of the path: specific segment modification
 - it provides only basic functions
+- if path is incorrect by nature (ex: '/a/../../j', 'c:/d:', '/..') some strange/non well defined behaviours may occur
 - it forces you to pass paths as strings (primitive copy) instead of references, and parse/normalize them almost each time.
 
 With this lib, you are sure than every *'Path'* you'll received is normalized and ready for usage.
+
+Moreover, if your path is not well formed (contains invalid segment's names, includes more than one root, goes upper than root, etc.),
+*Path* doesn't hesitate to throw or return null.
+This avoids unwanted behaviour like invalid paths magically transforming into valid ones after a `path.normalize` for example.
+
+Give it a try, and to hesitate to share your feedback into the *issues* section of github 😉
 
 ## Table of contents ##
 <!-- toc -->
