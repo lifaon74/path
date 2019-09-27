@@ -1,91 +1,7 @@
-[![npm (scoped)](https://img.shields.io/npm/v/@lifaon/path.svg)](https://www.npmjs.com/package/@lifaon/path)
-![npm bundle size (scoped)](https://img.shields.io/bundlephobia/minzip/@lifaon/path.svg)
-![npm](https://img.shields.io/npm/dm/@lifaon/path.svg)
-![NPM](https://img.shields.io/npm/l/@lifaon/path.svg)
-![npm type definitions](https://img.shields.io/npm/types/@lifaon/path.svg)
+import { IPlatformConfig } from '../functions/configs';
+import { IStemAndExtTuple, TAllowedSpecialSegments, TNormalizedPathSegments, TPathSegments } from '../functions/interfaces';
 
 
-# Path #
-
-Provides a *Path* class to manage paths:
-- normalization
-- mutation
-- dirname, basename, stem and ext, ...
-- comparision
-- etc...
-
-Supports multiple configs and environments (windows and posix style).
-
-Allows you to pass paths as normalized reference instead of string that you need to parse and normalize many times.
-
-Allows you to inspect and modify specific segments of the path.
-
-To install:
-```bash
-yarn add @lifaon/path
-# or 
-npm i @lifaon/path --save
-```
-
-Entry point: `index.js`. I recommend you to use rollup to import/bundle the package,
-but you may use an already bundled version in `bundles/`.
-
-You may also use unpkg: `https://unpkg.com/@lifaon/path`
-
-The bundled esnext minzipped core is around 3KB in size (`path.esnext.core.umd.min.js`).
-
-**Example:**
-```ts
-function writeFileExample() {
-  const fs = require('fs').promises;
-  
-  function writeFile(path: TPathInput, content: Uint8Array): Promise<void> {
-    const _path = Path.of(path);
-    const _parent = _path.dirname();
-    if (_parent === null) {
-      return Promise.reject(new Error(`path is not a file`));
-    } else {
-      return fs.mkdir(_parent.toString())
-        .then(() => {
-          return fs.writeFile(_path.toString(), content);
-        });
-    }
-  }
-}
-```
-
-**But [path](https://nodejs.org/api/path.html) already exists on NodeJS 🤨 !?**
-
-Yes sure ! But the NojeJS's path library has some limitations:
-- it is not native to the browser (you'll need to use browserify for example)
-- it doesn't support fine tuning of the path: specific segment modification
-- it provides only basic functions
-- it forces you to pass paths as strings (primitive copy) instead of references, and parse/normalize them almost each time.
-
-With this lib, you are sure than every *'Path'* you'll received is normalized and ready for usage.
-
-## Table of contents ##
-<!-- toc -->
-- [Usage](#usage)
-- [Comparision with NodeJS's path](#comparision-with-nodejss-path)
-    + [Windows vs. POSIX](#windows-vs-posix)
-    + [path.basename(path[, ext])](#pathbasenamepath-ext)
-    + [path.delimiter](#pathdelimiter)
-    + [path.dirname(path)](#pathdirnamepath)
-    + [path.extname(path)](#pathextnamepath)
-    + [path.isAbsolute(path)](#pathisabsolutepath)
-    + [path.join([...paths])](#pathjoinpaths)
-    + [path.normalize(path)](#pathnormalizepath)
-    + [path.posix](#pathposix)
-    + [path.relative(from, to)](#pathrelativefrom-to)
-    + [path.resolve([...paths])](#pathresolvepaths)
-    + [path.sep](#pathsep)
-    + [path.win32](#pathwin32)
-
-
-## Usage ##
-
-```ts
 /** TYPES **/
 
 export type TPathInput =
@@ -94,6 +10,8 @@ export type TPathInput =
   | IPath // a Path
   | { toString(): string } // an object castable to string
 ;
+
+export type TPathConstructorArgs = [TPathInput, IPlatformConfig?];
 
 /** INTERFACES **/
 
@@ -111,6 +29,7 @@ export interface IPathConstructor {
   /**
    * If 'path' is a Path, returns 'path',
    * Else creates a Path from 'path'
+   *  => useful if you want to accept many types as the 'path' input of a function without sacrificing performances:
    */
   of(path: TPathInput, config?: IPlatformConfig): IPath;
 
@@ -283,109 +202,3 @@ export interface IPath {
 
   [Symbol.iterator](): IterableIterator<string>;
 }
-
-```
-
-
-## Comparision with NodeJS's path ##
-
-[NodeJS's path doc](https://nodejs.org/api/path.html)
-
-#### Windows vs. POSIX ####
-
-*Path* supports both *windows* and *posix* by default.
-
-By using a specific config you can custom the behaviour: ex - to support only windows style paths -
-```ts
-new Path('C:\\temp\\myfile.html', Path.windows);
-```
-
-The config is transmitted to the descendants (ex: using `concat`).
-
-
-#### path.basename(path[, ext]) ####
-```ts
-new Path(path).basename(ext?);
-```
-
-#### path.delimiter ####
-```ts
-Path.currentPlatform.delimiterPattern;
-```
-
-#### path.dirname(path) ####
-```ts
-new Path(path).dirname();
-```
-
-#### path.extname(path) ####
-```ts
-new Path(path).stemAndExt().ext;
-```
-
-#### path.isAbsolute(path) ####
-```ts
-new Path(path).isAbsolute();
-```
-
-#### path.join([...paths]) ####
-```ts
-new Path(path).concat(...paths);
-```
-
-#### path.normalize(path) ####
-```ts
-new Path(path); // because the input is always normalized in the constructor
-```
-
-#### path.posix ####
-```ts
-new Path(path, Path.posix);
-```
-
-#### path.relative(from, to) ####
-```ts
-new Path(from).relative(to);
-```
-
-
-#### path.resolve([...paths]) ####
-
-**WARN:** `new Path(path1).resolve(path2);` is not equivalent to `path.resolve([...paths])`,
-because NodeJS process the arguments from right to left where *Path* doesn't need such a strange trick.
-
-`new Path(path1).resolve(path2);` may be translated to:
- - if `path1` is absolute, returns this path
- - else concats (*path.join* in NodeJS) `path2` and `path1`
-
-If `path2` is omitted, like NodeJS, `process.cwd` is used instead.
-
-This is the correct equivalent:
-```ts
-// in NodeJS
-path.resolve('/foo', '/bar', 'baz') // => would return /bar/baz
-
-// with Path
-new Path('baz') // './baz'
-    .resolve('/bar') // '/bar/baz'
-    .resolve('/foo'); // '/bar/baz' => no modification because already absolute
-```
-
-#### path.sep ####
-```ts
-Path.currentPlatform.separator;
-```
-
-#### path.win32 ####
-```ts
-new Path(path, Path.windows);
-```
-
-
-
-
-
-
-
-
-

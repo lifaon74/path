@@ -1,6 +1,8 @@
+import { testPath } from './tests/test';
+
 window.onload = () => {
-  // TODO
-  console.log('Hello world');
+  testPath()
+    .catch((error) => console.error(error));
 };
 
 
