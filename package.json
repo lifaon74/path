@@ -1,6 +1,6 @@
 {
   "name": "@lifaon/path",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Useful tool to manage paths like the URL object",
   "main": "index.js",
   "scripts": {
@@ -71,9 +71,6 @@
   "access": "public",
   "__devDependencies": {
     "google-closure-compiler-js": "20170218.0.0"
-  },
-  "peerDependencies": {
-    "rxjs": "^6.5.3"
   },
   "devDependencies": {
     "@types/node": "latest",
