@@ -1,15 +1,17 @@
 // import * as $path from 'path';
-import { Path } from '../core/implementation';
+import { Path } from '../class/implementation';
 import { assert, assertFails } from './asserts';
-import { IStemAndExtTuple } from '../functions/interfaces';
-import { IPath } from '../core/interfaces';
+import { IStemAndExtTuple } from '../core/interfaces';
+import { IPath } from '../class/interfaces';
 
 export async function testPath() {
 
   await assert(() => new Path('c:').isAbsolute());
   await assert(() => new Path('/').isAbsolute());
   await assert(() => new Path('c:/').isAbsolute());
+  await assert(() => new Path('c:\\').isAbsolute());
   await assert(() => new Path('c:/a/').isAbsolute());
+  await assert(() => new Path('\\\\network\\g').isAbsolute());
   await assert(() => new Path('/a').isAbsolute());
   await assert(() => !new Path('c').isAbsolute());
   await assertFails(() => new Path('c:a').isAbsolute());
@@ -17,7 +19,9 @@ export async function testPath() {
   await assert(() => new Path('c:').isRoot());
   await assert(() => new Path('/').isRoot());
   await assert(() => new Path('c:/').isRoot());
+  await assert(() => new Path('\\\\network').isRoot());
   await assert(() => !new Path('c:/a/').isRoot());
+  await assert(() => !new Path('\\\\network\\a').isRoot());
   await assert(() => !new Path('/a').isRoot());
 
   await assert(() => (new Path('a/b/').toString() === './a/b'));
@@ -32,6 +36,7 @@ export async function testPath() {
   await assert(() => (new Path('c:/').toString() === 'c:/'));
   await assert(() => (new Path('C:/').toString() === 'C:/'));
   await assert(() => (new Path('c:\\a').toString() === 'c:/a'));
+  await assert(() => (new Path('\\\\network\\a').toString() === '\\\\network/a'));
   await assert(() => (new Path('../../').toString() === '../..'));
 
   await assert(() => ((new Path('a/./b/').commonBase('./a/b') as IPath).toString() === './a/b'));

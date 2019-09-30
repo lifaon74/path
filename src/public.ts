@@ -1,3 +1,3 @@
+export * from './class/public';
 export * from './core/public';
-export * from './functions/public';
 

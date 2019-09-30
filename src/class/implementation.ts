@@ -2,22 +2,24 @@ import { IsObject } from '../helpers/helpers';
 import { IPath, IPathConstructor, TPathConstructorArgs, TPathInput } from './interfaces';
 import { ConstructClassWithPrivateMembers } from '../helpers/factory/ClassWithPrivateMembers';
 import { Constructor, HasFactoryWaterMark, MakeFactory } from '../helpers/factory/factory';
-import { GENERIC_CONFIG, IPlatformConfig, POSIX_CONFIG, WINDOWS_CONFIG } from '../functions/configs';
+import {
+  GENERIC_CONFIG, IPlatformConfig, IWindowsPlatformConfig, POSIX_CONFIG, WINDOWS_CONFIG
+} from '../core/configs';
 import {
   CommonBasePathSegments, JoinPathSegments, RelativePathSegments,
   ResolvePathSegmentsWithOptionalRoot
-} from '../functions/operations';
-import { IStemAndExtTuple, TAllowedSpecialSegments, TNormalizedPathSegments } from '../functions/interfaces';
-import { PathSegmentsToStringPath, StringPathToPathSegments } from '../functions/convert';
+} from '../core/operations';
+import { IStemAndExtTuple, TAllowedSpecialSegments, TNormalizedPathSegments } from '../core/interfaces';
+import { PathSegmentsToStringPath, StringPathToPathSegments } from '../core/convert';
 import {
   AreSamePathSegments, BaseNamePathSegments, DirNamePathSegments, IsAbsolutePathSegments, IsRootPathSegments,
   IsSubPathSegments, StemAndExtTuplePathSegments
-} from '../functions/infos';
+} from '../core/infos';
 import {
   ForcePathSegmentsAsAbsolute, ForcePathSegmentsAsRelative, PathSegmentsPop, PathSegmentsPush
-} from '../functions/mutate';
-import { GetProcessPathSegments } from '../functions/others';
-import { NormalizePathSegments } from '../functions/normalize';
+} from '../core/mutate';
+import { GetProcessPathSegments } from '../core/others';
+import { NormalizePathSegments } from '../core/normalize';
 
 
 export const PATH_PRIVATE = Symbol('path-private');
@@ -105,6 +107,9 @@ export function PathGetLength(instance: IPath): number {
   return (instance as IPathInternal)[PATH_PRIVATE].path.length;
 }
 
+/**
+ * INFORMATION
+ */
 
 export function PathIsAbsolute(instance: IPath): boolean {
   const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
@@ -131,6 +136,10 @@ export function PathIsSubPathOf(instance: IPath, parentPath: TPathInput): boolea
 }
 
 
+/**
+ * OPERATIONS
+ */
+
 export function PathDirname(instance: IPath): IPath | null {
   const dirname: TNormalizedPathSegments | null = DirNamePathSegments((instance as IPathInternal)[PATH_PRIVATE].path);
   return (dirname === null)
@@ -156,32 +165,6 @@ export function PathStemAndExt(instance: IPath): IStemAndExtTuple | null {
   const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
   return StemAndExtTuplePathSegments(privates.path, privates.config);
 }
-
-
-export function PathPush(instance: IPath, parts: string[]): void {
-  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
-  for (let i = 0, l = parts.length; i < l; i++) {
-    PathSegmentsPush(privates.path, parts[i], privates.config);
-  }
-}
-
-export function PathPop(instance: IPath): void {
-  PathSegmentsPop((instance as IPathInternal)[PATH_PRIVATE].path);
-}
-
-export function PathForceAbsolute(instance: IPath, root?: TPathInput): void {
-  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
-  const _root: TNormalizedPathSegments = (root === void 0)
-    ? GetProcessPathSegments(privates.config)
-    : PathOfFromInstance(instance, root)[PATH_PRIVATE].path;
-  ForcePathSegmentsAsAbsolute(privates.path, _root[0], privates.config);
-}
-
-export function PathForceRelative(instance: IPath): void {
-  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
-  ForcePathSegmentsAsRelative(privates.path, privates.config);
-}
-
 
 export function PathCommonBase(instance: IPath, paths: TPathInput[]): IPath | null {
   const commonBase: TNormalizedPathSegments | null = CommonBasePathSegments([
@@ -229,7 +212,6 @@ export function PathResolve(instance: IPath, root?: TPathInput): IPath {
   );
 }
 
-
 export function PathClone(instance: IPath, config?: IPlatformConfig): IPath {
   const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
   return NewPathFromInstance(
@@ -238,6 +220,40 @@ export function PathClone(instance: IPath, config?: IPlatformConfig): IPath {
     config
   );
 }
+
+
+/**
+ * MUTATIONS
+ */
+
+export function PathPush(instance: IPath, parts: string[]): void {
+  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
+  for (let i = 0, l = parts.length; i < l; i++) {
+    PathSegmentsPush(privates.path, parts[i], privates.config);
+  }
+}
+
+export function PathPop(instance: IPath): void {
+  PathSegmentsPop((instance as IPathInternal)[PATH_PRIVATE].path);
+}
+
+export function PathForceAbsolute(instance: IPath, root?: TPathInput): void {
+  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
+  const _root: TNormalizedPathSegments = (root === void 0)
+    ? GetProcessPathSegments(privates.config)
+    : PathOfFromInstance(instance, root)[PATH_PRIVATE].path;
+  ForcePathSegmentsAsAbsolute(privates.path, _root[0], privates.config);
+}
+
+export function PathForceRelative(instance: IPath): void {
+  const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
+  ForcePathSegmentsAsRelative(privates.path, privates.config);
+}
+
+
+/**
+ * INSPECTION
+ */
 
 export function PathItem(instance: IPath, index: number): string {
   const path: TNormalizedPathSegments = (instance as IPathInternal)[PATH_PRIVATE].path;
@@ -266,6 +282,14 @@ export function PathForEach(instance: IPath, callback: (value: string, index: nu
   });
 }
 
+export function PathToIterator(instance: IPath): IterableIterator<string> {
+  return (instance as IPathInternal)[PATH_PRIVATE].path[Symbol.iterator]();
+}
+
+
+/**
+ * CONVERSION
+ */
 
 export function PathToString(instance: IPath, separator?: string): string {
   const privates: IPathPrivate = (instance as IPathInternal)[PATH_PRIVATE];
@@ -291,11 +315,6 @@ export function PathToURL(instance: IPath): URL {
   url.pathname = PathToString(instance, '/');
   return url;
 }
-
-export function PathToIterator(instance: IPath): IterableIterator<string> {
-  return (instance as IPathInternal)[PATH_PRIVATE].path[Symbol.iterator]();
-}
-
 
 /*------------------------------------------*/
 
@@ -342,7 +361,7 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
       return POSIX_CONFIG;
     }
 
-    static get windows(): Readonly<IPlatformConfig> {
+    static get windows(): Readonly<IWindowsPlatformConfig> {
       return WINDOWS_CONFIG;
     }
 
@@ -378,6 +397,9 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
       return PathGetLength(this);
     }
 
+    /**
+     * INFORMATION
+     */
 
     isAbsolute(): boolean {
       return PathIsAbsolute(this);
@@ -396,6 +418,10 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
     }
 
 
+    /**
+     * OPERATIONS
+     */
+
     dirname(): IPath | null {
       return PathDirname(this);
     }
@@ -408,6 +434,29 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
       return PathStemAndExt(this);
     }
 
+    commonBase(...paths: TPathInput[]): IPath | null {
+      return PathCommonBase(this, paths);
+    }
+
+    concat(...paths: TPathInput[]): IPath {
+      return PathConcat(this, paths);
+    }
+
+    relative(path: TPathInput): IPath | null {
+      return PathRelative(this, path);
+    }
+
+    resolve(root?: TPathInput): IPath {
+      return PathResolve(this, root);
+    }
+
+    clone(config?: IPlatformConfig): IPath {
+      return PathClone(this, config);
+    }
+
+    /**
+     * MUTATIONS
+     */
 
     push(...parts: string[]): this {
       PathPush(this, parts);
@@ -430,26 +479,9 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
     }
 
 
-    commonBase(...paths: TPathInput[]): IPath | null {
-      return PathCommonBase(this, paths);
-    }
-
-    concat(...paths: TPathInput[]): IPath {
-      return PathConcat(this, paths);
-    }
-
-    relative(path: TPathInput): IPath | null {
-      return PathRelative(this, path);
-    }
-
-    resolve(root?: TPathInput): IPath {
-      return PathResolve(this, root);
-    }
-
-
-    clone(config?: IPlatformConfig): IPath {
-      return PathClone(this, config);
-    }
+    /**
+     * INSPECTION
+     */
 
     item(index: number): string {
       return PathItem(this, index);
@@ -467,6 +499,14 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
       return PathForEach(this, callback);
     }
 
+    [Symbol.iterator](): IterableIterator<string> {
+      return PathToIterator(this);
+    }
+
+
+    /**
+     * CONVERSION
+     */
 
     toString(separator?: string): string {
       return PathToString(this);
@@ -484,9 +524,6 @@ function PurePathFactory<TBase extends Constructor>(superClass: TBase) {
       return PathToURL(this);
     }
 
-    [Symbol.iterator](): IterableIterator<string> {
-      return PathToIterator(this);
-    }
   };
 }
 
@@ -505,46 +542,4 @@ Path = class Path extends PathFactory<ObjectConstructor>(Object) {
     super([path, config]);
   }
 } as IPathConstructor;
-
-
-// export function testPathClass() {
-//   console.log('ok1');
-//   // console.log(require('path').normalize('./g/'));
-//   // console.log(NormalizePathSegments('/a/g/../b/./c'.split('/'), GENERIC_CONFIG));
-//   // console.log(NormalizePathSegments('.//a/g/../../../b/./c'.split('/'), GENERIC_CONFIG));
-//
-//   // console.log(
-//   //   JoinPathSegments([
-//   //     NormalizePathSegments('/a/b/c'.split('/'), GENERIC_CONFIG),
-//   //     NormalizePathSegments('./d/e/f'.split('/'), GENERIC_CONFIG),
-//   //   ], GENERIC_CONFIG),
-//   // );
-//
-//   // console.log(
-//   //   CommonBasePathSegments([
-//   //     NormalizePathSegments('/a/b/c'.split('/'), GENERIC_CONFIG),
-//   //     NormalizePathSegments('./d/e/f'.split('/'), GENERIC_CONFIG),
-//   //   ]),
-//   // );
-//
-//   // console.log(
-//   //   RelativePathSegments(
-//   //     NormalizePathSegments('./a/b/c/d/e'.split('/'), GENERIC_CONFIG),
-//   //     NormalizePathSegments('./a/b/c/'.split('/'), GENERIC_CONFIG),
-//   //     GENERIC_CONFIG
-//   //   ),
-//   // );
-//
-//   // const path: TPathSegments = ['.', 'a'];
-//   // console.log(defaultPathCommonOptions);
-//   // PathSegmentsPush(path, '..', defaultPathCommonOptions);
-//   // console.log(path);
-//
-//
-//   const path = new Path('./a/b/c/');
-//   console.log(path.isAbsolute());
-//   console.log(path.isSubPathOf('a/'));
-//   console.log((path.dirname() as IPath).toString());
-//   console.log(path.resolve().toArray());
-// }
 

@@ -258,7 +258,7 @@ export interface IPath {
 
 
   /**
-   * Following functions iterates of the segments of this Path
+   * Following functions iterates over the segments of this Path
    */
 
   every(callback: (this: this, value: string, index: number) => unknown): boolean;

@@ -1,6 +1,12 @@
+export * from './configs';
+export * from './convert';
+export * from './infos';
 export * from './interfaces';
-export { Path, IsPath } from './implementation';
+export * from './mutate';
+export * from './operations';
+export * from './segment';
+export * from './others';
+export * from './normalize';
 
 export { ErrorWithCode } from '../helpers/ErrorWithCode';
-// export { IPlatformConfig } from '../functions/configs';
-// export * from '../functions/interfaces';
+

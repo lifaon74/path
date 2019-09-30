@@ -1,5 +1,5 @@
-import { Path } from '../core/implementation';
-import { TPathInput } from '../core/interfaces';
+import { Path } from '../class/implementation';
+import { TPathInput } from '../class/interfaces';
 
 function writeFileExample() {
   const fs = require('fs').promises;
