@@ -1,4 +1,4 @@
-import { IsObject } from '../helpers/helpers';
+import { GetProcess, IsObject } from '../helpers/helpers';
 import { IPath, IPathConstructor, TPathConstructorArgs, TPathInput } from './interfaces';
 import { ConstructClassWithPrivateMembers } from '../helpers/factory/ClassWithPrivateMembers';
 import { Constructor, HasFactoryWaterMark, MakeFactory } from '../helpers/factory/factory';
@@ -319,22 +319,14 @@ export function PathToURL(instance: IPath): URL {
 /*------------------------------------------*/
 
 export function PathCurrentPlatform(): Readonly<IPlatformConfig> {
-  if (globalThis.process) {
-    return (process.platform === 'win32')
-      ? WINDOWS_CONFIG
-      : POSIX_CONFIG;
-  } else {
-    throw new Error(`Not on a nodeJs's environment`);
-  }
+  return (GetProcess().platform === 'win32')
+    ? WINDOWS_CONFIG
+    : POSIX_CONFIG;
 }
 
 
 export function PathProcess(constructor: IPathConstructor, config?: IPlatformConfig): IPath {
-  if (globalThis.process) {
-    return new constructor(process.cwd(), config);
-  } else {
-    throw new Error(`Not on a nodeJs's environment`);
-  }
+  return new constructor(GetProcess().cwd(), config);
 }
 
 export function PathOf(constructor: IPathConstructor, path: TPathInput, config?: IPlatformConfig): IPath {

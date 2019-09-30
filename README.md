@@ -135,6 +135,10 @@ export interface IPath {
   readonly length: number; // the number of segments composing the Path
 
   /**
+   * INFORMATION: returns some properties about this Path
+   */
+
+  /**
    * Returns true if this Path is absolute
    */
   isAbsolute(): boolean;
@@ -155,6 +159,11 @@ export interface IPath {
    *  new Path('a/b/').isSubPathOf('a/') => true
    */
   isSubPathOf(parentPath: TPathInput): boolean;
+
+
+  /**
+   * OPERATIONS: creates new Path after doing some operation on this Path
+   */
 
   /**
    * Returns the parent directory's Path of this Path. If this Path is a pure root, returns null
@@ -180,38 +189,6 @@ export interface IPath {
    * Returns a tuple composed of the stem and the extension of the basename of this Path
    */
   stemAndExt(): IStemAndExtTuple | null;
-
-  /**
-   * Inserts 'parts', as an array of path's segments at the end of this Path.
-   *  - mutates this Path
-   *  - may insert '..' if this Path is not a pure root
-   *  - cannot insert a root
-   *  - this Path remains normalized
-   */
-  push(...parts: string[]): this;
-
-  /**
-   * Removes one segment at the end of ths Path.
-   *  - mutates this Path
-   *  - if this Path contains only one segment, it becomes '.'
-   *  - this function is not strictly equivalent to push('..')
-   *  - this Path remains normalized
-   */
-  pop(): this;
-
-  /**
-   * Forces this Path to mutate to an absolute Path IF not already absolute
-   *  - mutates this Path
-   * @param root - default: process.cwd()
-   */
-  forceAbsolute(root?: TPathInput): this;
-
-  /**
-   * Forces this Path to mutate to a relative path IF not already relative
-   *  => replaces Path's first segment (the root) with '.'
-   *  - mutates this Path
-   */
-  forceRelative(): this;
 
   /**
    * Returns the common base between this Path, and each 'paths'
@@ -245,11 +222,52 @@ export interface IPath {
    */
   resolve(root?: TPathInput): IPath;
 
-
   /**
    * Clones the path. Kind of new Path(this, config) but faster
    */
   clone(config?: IPlatformConfig): IPath;
+
+
+  /**
+   * MUTATIONS: mutates the content of this Path
+   */
+
+  /**
+   * Inserts 'parts', as an array of path's segments at the end of this Path.
+   *  - mutates this Path
+   *  - may insert '..' if this Path is not a pure root
+   *  - cannot insert a root
+   *  - this Path remains normalized
+   */
+  push(...parts: string[]): this;
+
+  /**
+   * Removes one segment at the end of ths Path.
+   *  - mutates this Path
+   *  - if this Path contains only one segment, it becomes '.'
+   *  - this function is not strictly equivalent to push('..')
+   *  - this Path remains normalized
+   */
+  pop(): this;
+
+  /**
+   * Forces this Path to mutate to an absolute Path IF not already absolute
+   *  - mutates this Path
+   * @param root - default: process.cwd()
+   */
+  forceAbsolute(root?: TPathInput): this;
+
+  /**
+   * Forces this Path to mutate to a relative path IF not already relative
+   *  => replaces Path's first segment (the root) with '.'
+   *  - mutates this Path
+   */
+  forceRelative(): this;
+
+
+  /**
+   * INSPECTION: reads and explores the different segments of this Path
+   */
 
   /**
    * Returns the segment at position 'index'
@@ -266,6 +284,13 @@ export interface IPath {
   some(callback: (this: this, value: string, index: number) => unknown): boolean;
 
   forEach(callback: (this: this, value: string, index: number) => void): void;
+
+  [Symbol.iterator](): IterableIterator<string>;
+
+
+  /**
+   * CONVERSION: converts this Path to different formats
+   */
 
   /**
    * Returns the concatenated string of the different segments of this Path, separated by 'separator'
@@ -288,9 +313,7 @@ export interface IPath {
    */
   toURL(): URL;
 
-  [Symbol.iterator](): IterableIterator<string>;
 }
-
 ```
 
 
