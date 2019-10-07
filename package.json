@@ -1,6 +1,6 @@
 {
   "name": "@lifaon/path",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Useful tool to manage paths like the URL object",
   "main": "index.js",
   "scripts": {

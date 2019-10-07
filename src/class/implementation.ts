@@ -1,7 +1,9 @@
 import { GetProcess, IsObject } from '../helpers/helpers';
 import { IPath, IPathConstructor, TPathConstructorArgs, TPathInput } from './interfaces';
 import { ConstructClassWithPrivateMembers } from '../helpers/factory/ClassWithPrivateMembers';
-import { Constructor, HasFactoryWaterMark, MakeFactory } from '../helpers/factory/factory';
+import {
+  BaseClass, Constructor, HasFactoryWaterMark, IBaseClassConstructor, MakeFactory
+} from '../helpers/factory/factory';
 import {
   GENERIC_CONFIG, IPlatformConfig, IWindowsPlatformConfig, POSIX_CONFIG, WINDOWS_CONFIG
 } from '../core/configs';
@@ -529,7 +531,7 @@ export function PathFactory<TBase extends Constructor>(superClass: TBase) {
   });
 }
 
-Path = class Path extends PathFactory<ObjectConstructor>(Object) {
+Path = class Path extends PathFactory<IBaseClassConstructor>(BaseClass) {
   constructor(path: TPathInput, config?: IPlatformConfig) {
     super([path, config]);
   }
