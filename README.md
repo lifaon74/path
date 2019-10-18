@@ -69,7 +69,7 @@ Moreover, if your path is not well formed (contains invalid segment's names, inc
 *Path* doesn't hesitate to throw or return null.
 This avoids unwanted behaviour like invalid paths magically transforming into valid ones after a `path.normalize` for example.
 
-Give it a try, and to hesitate to share your feedback into the *issues* section of github 😉
+Give it a try, and dont hesitate to share your feedback into the *issues* section of github 😉
 
 ## Table of contents ##
 <!-- toc -->
@@ -97,7 +97,7 @@ Give it a try, and to hesitate to share your feedback into the *issues* section 
 
 export type TPathInput =
   string // the path as a string
-  | TPathSegments // the path as spited segments (kind of .split('/'))
+  | TPathSegments // the path as split segments (kind of .split('/'))
   | IPath // a Path
   | { toString(): string } // an object castable to string
 ;
@@ -106,7 +106,7 @@ export type TPathInput =
 
 export interface IPathConstructor {
   readonly posix: Readonly<IPlatformConfig>; // returns the posix configuration to provide to Path
-  readonly windows: Readonly<IPlatformConfig>; // returns the windows configuration to provide to Path
+  readonly windows: Readonly<IWindowsPlatformConfig>; // returns the windows configuration to provide to Path
   readonly generic: Readonly<IPlatformConfig>; // returns a generic configuration to provide to Path
   readonly currentPlatform: Readonly<IPlatformConfig> | never; // returns the current platform configuration to provide to Path (only on NodeJs)
 
@@ -118,6 +118,7 @@ export interface IPathConstructor {
   /**
    * If 'path' is a Path, returns 'path',
    * Else creates a Path from 'path'
+   *  => useful if you want to accept many types as the 'path' input of a function without sacrificing performances:
    */
   of(path: TPathInput, config?: IPlatformConfig): IPath;
 
@@ -150,6 +151,8 @@ export interface IPath {
 
   /**
    * Returns true if this Path is equal to 'path' (after normalization)
+   * @example:
+   *  new Path('a/b/').equals('a/c/../b') => true
    */
   equals(path: TPathInput): boolean;
 
@@ -168,7 +171,8 @@ export interface IPath {
   /**
    * Returns the parent directory's Path of this Path. If this Path is a pure root, returns null
    * @example:
-   *  new Path('a/b').dirname() as IPath) => './a'
+   *  new Path('a/b').dirname() => './a'
+   *  new Path('c:/').dirname() => null
    */
   dirname(): IPath | null;
 
@@ -242,7 +246,7 @@ export interface IPath {
   push(...parts: string[]): this;
 
   /**
-   * Removes one segment at the end of ths Path.
+   * Removes one segment at the end of this Path.
    *  - mutates this Path
    *  - if this Path contains only one segment, it becomes '.'
    *  - this function is not strictly equivalent to push('..')
@@ -251,14 +255,14 @@ export interface IPath {
   pop(): this;
 
   /**
-   * Forces this Path to mutate to an absolute Path IF not already absolute
+   * Forces this Path to mutate to an absolute Path IF it is not already absolute
    *  - mutates this Path
    * @param root - default: process.cwd()
    */
   forceAbsolute(root?: TPathInput): this;
 
   /**
-   * Forces this Path to mutate to a relative path IF not already relative
+   * Forces this Path to mutate to a relative path IF it is not already relative
    *  => replaces Path's first segment (the root) with '.'
    *  - mutates this Path
    */
