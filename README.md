@@ -35,24 +35,50 @@ You may also use unpkg: `https://unpkg.com/@lifaon/path`
 The bundled esnext minzipped core is around 3KB in size (`path.esnext.core.umd.min.js`).
 
 **Example:**
-```ts
+```typescript
 function writeFileExample() {
   const fs = require('fs').promises;
-  
+
   function writeFile(path: TPathInput, content: Uint8Array): Promise<void> {
-    const _path = Path.of(path);
-    const _parent = _path.dirname();
+    const _path: IPath = Path.of(path); // 'path' may be both a Path or a string, or something similar, so we use Path.of
+    const _parent: IPath | null = _path.dirname(); // gets the parent's Path of '_path'
     if (_parent === null) {
       return Promise.reject(new Error(`path is not a file`));
     } else {
-      return fs.mkdir(_parent.toString())
+      return fs.mkdir(_parent.toString(), { recursive: true }) // creates the parent directory
         .then(() => {
-          return fs.writeFile(_path.toString(), content);
+          return fs.writeFile(_path.toString(), content); // write the file
         });
     }
   }
 }
 ```
+
+<details>
+<summary>If you prefer js</summary>
+<p>
+
+```js
+function writeFileExampleJS() {
+  const fs = require('fs').promises;
+
+  function writeFile(path, content) {
+    const _path = Path.of(path); // 'path' may be both a Path or a string, or something similar, so we use Path.of
+    const _parent = _path.dirname(); // gets the parent's Path of '_path'
+    if (_parent === null) {
+      return Promise.reject(new Error(`path is not a file`));
+    } else {
+      return fs.mkdir(_parent.toString(), { recursive: true }) // creates the parent directory
+        .then(() => {
+          return fs.writeFile(_path.toString(), content); // write the file
+        });
+    }
+  }
+}
+```
+
+</p>
+</details>
 
 **But [path](https://nodejs.org/api/path.html) already exists on NodeJS 🤨 !?**
 
