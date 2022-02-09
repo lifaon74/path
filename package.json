@@ -1,6 +1,6 @@
 {
   "name": "@lifaon/path",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Useful tool to manage paths like the URL object",
   "repository": {
     "type": "git",

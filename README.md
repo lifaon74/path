@@ -191,6 +191,12 @@ export interface Path {
   dirname(): Path | null;
 
   /**
+   * Like .dirname but throws if the returned value is null (in case the path is a pure root)
+   * @see dirname
+   */
+  dirnameOrThrow(): Path | never;
+  
+  /**
    * Returns the basename of this Path
    *  - if 'ext' is provided, removes 'ext' from the basename
    *  - returns null if basename is special (relative or root) and allowedSpecialSegments doesn't include it
@@ -207,10 +213,25 @@ export interface Path {
   ): string | null;
 
   /**
+   * Like .basename but throws if the returned value is null (in case basename is special)
+   * @see basename
+   */
+  basenameOrThrow(
+    ext?: string,
+    allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
+  ): string | never;
+  
+  /**
    * Returns a tuple composed of the stem and the extension of the basename of this Path
    */
   stemAndExt(): IStemAndExtTuple | null;
 
+  /**
+   * Like .stemAndExt but throws if the returned value is null
+   * @see stemAndExt
+   */
+  stemAndExtOrThrow(): IStemAndExtTuple | never;
+  
   /**
    * Returns the common base between this Path, and each 'paths'
    *  - if no common base, returns null
