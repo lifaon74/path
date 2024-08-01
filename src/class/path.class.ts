@@ -1,41 +1,42 @@
-import { IPathPlatformConfig } from '../platform-config/types/path-platform-config.type';
-import { IPathInput } from './types/path-input.type';
-import { IPathSegments } from '../segments/types/path-segments.type';
-import { convertUncheckedPathSegmentsIntoPathSegments } from '../segments/functions/convert/convert-unchecked-path-segments-into-path-segments';
-import { isPath } from './functions/is-path';
-import { convertStringPathToPathSegments } from '../segments/functions/convert/convert-string-path-to-path-segments';
-import { IWindowsPathPlatformConfig } from '../platform-config/types/windows-path-platform-config.type';
-import { POSIX_PATH_PLATFORM_CONFIG } from '../platform-config/constants/posix-path-platform-config.constants';
-import { WINDOWS_PATH_PLATFORM_CONFIG } from '../platform-config/constants/windows-path-platform-config.constants';
-import { GENERIC_PATH_PLATFORM_CONFIG } from '../platform-config/constants/generic-path-platform-config.constants';
-import { getCurrentPathPlatformConfig } from '../platform-config/functions/get-current-path-platform-config';
-import { isObject } from '../functions/is-object';
-import { isAbsolutePathSegments } from '../segments/functions/is/is-absolute-path-segments';
-import { isRootPathSegments } from '../segments/functions/is/is-root-path-segments';
-import { convertPathSegmentsToStringPath } from '../segments/functions/convert/convert-path-segments-to-string-path';
-import { getDirnameOfPathSegments } from '../segments/functions/get/get-dirname-of-path-segments';
-import { getBasenameOfPathSegments } from '../segments/functions/get/get-basename-of-path-segments';
-import { ISpecialSegmentsAllowedForBasename } from '../segments/segment/functions/get/get-basename-of-path-segment';
-import { getStemAndExtOfPathSegments } from '../segments/functions/get/get-stem-and-ext-of-path-segments';
-import { IStemAndExtTuple } from '../segments/segment/functions/get/get-stem-and-ext-entry-path-segment';
-import { isSubPathOfPathSegments } from '../segments/functions/is/is-sub-path-of-path-segments';
-import { areSamePathSegments } from '../segments/functions/compare/are-same-path-segments';
-import { getCommonBaseOfManyPathSegments } from '../segments/functions/get/get-common-base-of-many-path-segments';
-import { joinManyPathSegments } from '../segments/functions/join/join-many-path-segments';
-import { getRelativePathSegments } from '../segments/functions/get/get-relative-path-segments';
-import { resolvePathSegmentsWithOptionalRoot } from '../segments/functions/resolve/resolve-path-segments-with-optional-root';
-import { getProcessPathSegments } from '../segments/functions/get/get-process-path-segments';
-import { makePathSegmentsAsAbsolute } from '../segments/functions/make/make-path-segments-as-absolute';
-import { makePathSegmentsAsRelative } from '../segments/functions/make/make-path-segments-as-relative';
-import { getProcess } from '../functions/get-process';
+import { getProcess } from '../.private/functions/get-process.js';
+import { isObject } from '../.private/functions/is-object.js';
+import { GENERIC_PATH_PLATFORM_CONFIG } from '../.private/platform-config/constants/generic-path-platform-config.constants.js';
+import { POSIX_PATH_PLATFORM_CONFIG } from '../.private/platform-config/constants/posix-path-platform-config.constants.js';
+import { WINDOWS_PATH_PLATFORM_CONFIG } from '../.private/platform-config/constants/windows-path-platform-config.constants.js';
+import { getCurrentPathPlatformConfig } from '../.private/platform-config/functions/get-current-path-platform-config.js';
+import { arePathSegmentsEquivalent } from '../.private/segments/functions/compare/are-path-segments-equivalent.js';
+import { convertPathSegmentsToStringPath } from '../.private/segments/functions/convert/convert-path-segments-to-string-path.js';
+import { convertStringPathToPathSegments } from '../.private/segments/functions/convert/convert-string-path-to-path-segments.js';
+import { convertUncheckedPathSegmentsIntoPathSegments } from '../.private/segments/functions/convert/convert-unchecked-path-segments-into-path-segments.js';
+import { getBasenameOfPathSegments } from '../.private/segments/functions/get/get-basename-of-path-segments.js';
+import { getCommonBaseOfManyPathSegments } from '../.private/segments/functions/get/get-common-base-of-many-path-segments.js';
+import { getDirnameOfPathSegments } from '../.private/segments/functions/get/get-dirname-of-path-segments.js';
+import { getProcessPathSegments } from '../.private/segments/functions/get/get-process-path-segments.js';
+import { getRelativePathSegments } from '../.private/segments/functions/get/get-relative-path-segments.js';
+import { getStemAndExtOfPathSegments } from '../.private/segments/functions/get/get-stem-and-ext-of-path-segments.js';
+import { isAbsolutePathSegments } from '../.private/segments/functions/is/is-absolute-path-segments.js';
+import { isRootPathSegments } from '../.private/segments/functions/is/is-root-path-segments.js';
+import { isSubPathOfPathSegments } from '../.private/segments/functions/is/is-sub-path-of-path-segments.js';
+import { joinManyPathSegments } from '../.private/segments/functions/join/join-many-path-segments.js';
+import { makePathSegmentsAsAbsolute } from '../.private/segments/functions/make/make-path-segments-as-absolute.js';
+import { makePathSegmentsAsRelative } from '../.private/segments/functions/make/make-path-segments-as-relative.js';
+import { resolvePathSegmentsWithOptionalRoot } from '../.private/segments/functions/resolve/resolve-path-segments-with-optional-root.js';
 
+import type { IPathPlatformConfig } from '../types/platform-config/path-platform-config.type.js';
+import type { IWindowsPathPlatformConfig } from '../types/platform-config/windows-path-platform-config.type.js';
+import type { ISpecialSegmentsAllowedForBasename } from '../types/segments/special-segments-allowed-for-basename.type.js';
+
+import type { IPathInput } from '../types/path-input.type.js';
+import type { IPathSegments } from '../types/segments/path-segments.type.js';
+import type { IStemAndExtTuple } from '../types/stem-and-ext-tuple.type.js';
+import { isPath } from './functions/is-path.js';
 
 let BYPASS_PATH_CONSTRUCT: boolean = false;
 
 function createPathFromPathInstance(
   instance: Path,
   segments: IPathSegments = instance.segments,
-  config: Readonly<IPathPlatformConfig> = instance.config,
+  config: IPathPlatformConfig = instance.config,
 ): Path {
   BYPASS_PATH_CONSTRUCT = true;
   const path: Path = new Path(segments, config);
@@ -43,70 +44,58 @@ function createPathFromPathInstance(
   return path;
 }
 
-/** CLASS **/
+/* CLASS */
 
+/**
+ * A class to manipulate Paths.
+ */
 export class Path {
-
-  static get posix(): Readonly<IPathPlatformConfig> {
+  static get posix(): IPathPlatformConfig {
     return POSIX_PATH_PLATFORM_CONFIG;
   }
 
-  static get windows(): Readonly<IWindowsPathPlatformConfig> {
+  static get windows(): IWindowsPathPlatformConfig {
     return WINDOWS_PATH_PLATFORM_CONFIG;
   }
 
-  static get generic(): Readonly<IPathPlatformConfig> {
+  static get generic(): IPathPlatformConfig {
     return GENERIC_PATH_PLATFORM_CONFIG;
   }
 
-  static get currentPlatform(): Readonly<IPathPlatformConfig> | never {
+  static get currentPlatform(): IPathPlatformConfig | never {
     return getCurrentPathPlatformConfig();
   }
 
   /**
-   * Returns the current process working directory as Path
+   * Returns the current process working directory as a `Path`.
    */
-  static process(
-    config?: IPathPlatformConfig,
-  ): Path | never {
+  static process(config?: IPathPlatformConfig): Path | never {
     return new Path(getProcess().cwd(), config);
   }
 
   /**
-   * If 'path' is a Path, returns 'path',
-   * Else creates a Path from 'path'
-   *  => useful if you want to accept many types as the 'path' input of a function without sacrificing performances:
+   * If `path` is a `Path`, returns `path`,
+   * else creates a `Path` from `path`.
+   *  => useful if you want to accept many types as the `path` input of a function without sacrificing performances
    */
-  static of(
-    path: IPathInput,
-    config?: Readonly<IPathPlatformConfig>,
-  ): Path {
-    return isPath(path)
-      ? path
-      : new Path(path, config);
+  static of(path: IPathInput, config?: IPathPlatformConfig): Path {
+    return isPath(path) ? path : new Path(path, config);
   }
 
   readonly segments: IPathSegments;
-  readonly config: Readonly<IPathPlatformConfig>;
+  readonly config: IPathPlatformConfig;
 
-  constructor(
-    path: IPathInput,
-    config?: Readonly<IPathPlatformConfig>,
-  ) {
+  constructor(path: IPathInput, config?: IPathPlatformConfig) {
     if (BYPASS_PATH_CONSTRUCT) {
       this.segments = path as IPathSegments;
-      this.config = config as Readonly<IPathPlatformConfig>;
+      this.config = config as IPathPlatformConfig;
     } else {
-      if (config === void 0) {
-        this.config = isPath(path)
-          ? path.config
-          : GENERIC_PATH_PLATFORM_CONFIG;
+      if (config === undefined) {
+        this.config = isPath(path) ? path.config : GENERIC_PATH_PLATFORM_CONFIG;
       } else if (isObject(config)) {
-        this.config = Object.isFrozen(config)
-          ? config
-          : Object.freeze({ ...config });
+        this.config = Object.isFrozen(config) ? config : Object.freeze({ ...config });
       } else {
-        throw new TypeError(`Expected PathPlatformConfig or void as config`);
+        throw new TypeError('Expected IPathPlatformConfig or void as second input.');
       }
 
       if (typeof path === 'string') {
@@ -116,7 +105,7 @@ export class Path {
       } else if (isPath(path)) {
         this.segments = path.segments.slice();
       } else {
-        throw new TypeError(`Expected string, string[], Path or object with toString() method as path`);
+        throw new TypeError('Expected string, string[] or Path as first input.');
       }
     }
   }
@@ -124,196 +113,218 @@ export class Path {
   /* IS */
 
   /**
-   * Returns true if this Path is absolute
+   * Returns `true` if this Path is absolute.
    */
   isAbsolute(): boolean {
     return isAbsolutePathSegments(this.segments, this.config);
   }
 
   /**
-   * Returns true if this Path is a pure root (ex: 'c:' or '/')
+   * Returns `true` if this Path is a pure root (ex: `c:` or `/`).
    */
   isRoot(): boolean {
     return isRootPathSegments(this.segments, this.config);
   }
 
   /**
-   * Returns true if this Path is a sub-path of 'path' (after normalization)
+   * Returns true if this Path is a sub-path of `path` (after normalization).
+   *
    * @example:
-   *  new Path('a/b/').isSubPathOf('a/') => true
+   *  `new Path('a/b/').isSubPathOf('a/')` => `true`
    */
-  isSubPathOf(
-    parentPath: IPathInput,
-  ): boolean {
-    return isSubPathOfPathSegments(
-      this.segments,
-      Path.of(parentPath, this.config).segments,
-    );
+  isSubPathOf(parentPath: IPathInput): boolean {
+    return isSubPathOfPathSegments(this.segments, Path.of(parentPath, this.config).segments);
   }
 
   /* COMPARISON */
 
   /**
-   * Returns true if this Path is equal to 'path' (after normalization)
+   * Returns `true` if this Path is equal to `path` (after normalization).
+   *
    * @example:
-   *  new Path('a/b/').equals('a/c/../b') => true
+   *  `new Path('a/b/').equals('a/c/../b')` => `true`
    */
-  equals(
-    path: IPathInput,
-  ): boolean {
-    return areSamePathSegments(
-      this.segments,
-      Path.of(path, this.config).segments,
-    );
+  equals(path: IPathInput): boolean {
+    return arePathSegmentsEquivalent(this.segments, Path.of(path, this.config).segments);
   }
 
   /* GET */
 
   /**
-   * Returns the parent directory's Path of this Path. If this Path is a pure root, returns null
+   * Returns the parent directory's Path of this Path.
+   * If this operation cannot be performed (ex: this Path is a "root"), the function throws.
+   *
    * @example:
-   *  new Path('a/b').dirname() => './a'
-   *  new Path('c:/').dirname() => null
+   *  `new Path('a/b').dirname()` => `./a`
+   *  `new Path('c:/').dirname()` => throws
    */
-  dirname(): Path | null {
-    const dirname: IPathSegments | null = getDirnameOfPathSegments(this.segments);
-    return (dirname === null)
-      ? null
-      : createPathFromPathInstance(this, dirname);
-  }
-
-  /**
-   * Like .dirname but throws if the returned value is null (in case the path is a pure root)
-   * @see dirname
-   */
-  dirnameOrThrow(): Path | never {
-    const dirname: Path | null = this.dirname();
+  dirname(): Path | never {
+    const dirname: Path | null = this.dirnameOptional();
     if (dirname === null) {
-      throw new Error(`Cannot use .dirname on this path`);
+      throw new Error("This path doesn't accept '.dirname()'.");
     } else {
       return dirname;
     }
   }
 
   /**
-   * Returns the basename of this Path
-   *  - if 'ext' is provided, removes 'ext' from the basename
-   *  - returns null if basename is special (relative or root) and allowedSpecialSegments doesn't include it
-   *  @param ext - default: ''
-   *  @param allowedSpecialSegments - default: new Set()
+   * Like `.dirname()`, but returns `null` instead of throwing.
    *
-   *  @example:
-   *    new Path('/a/b').basename() => 'b'
-   *    new Path('/').basename() => null
+   * @see dirname
+   */
+  dirnameOptional(): Path | null {
+    const dirname: IPathSegments | null = getDirnameOfPathSegments(this.segments);
+    return dirname === null ? null : createPathFromPathInstance(this, dirname);
+  }
+
+  /**
+   * Returns the basename of this Path:
+   *  - if `ext` is provided, `ext` is removed from the basename
+   *  - the function throws if the basename is special (ex: relative or root) and `allowedSpecialSegments` doesn't include it
+   *
+   * @param ext - default: `''`
+   * @param allowedSpecialSegments - default: `new Set()`
+   *
+   * @example:
+   *  `new Path('/a/b').basename()` => 'b'
+   *  `new Path('/').basename()` => throws
    */
   basename(
     ext?: string,
     allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
-  ): string | null {
-    return getBasenameOfPathSegments(
-      this.segments,
-      ext,
-      (allowedSpecialSegments === void 0)
-        ? this.config
-        : {
-          ...this.config,
-          allowedSpecialSegments: new Set<ISpecialSegmentsAllowedForBasename>(allowedSpecialSegments),
-        },
-    );
-  }
-
-  /**
-   * Like .basename but throws if the returned value is null (in case basename is special)
-   * @see basename
-   */
-  basenameOrThrow(
-    ext?: string,
-    allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
   ): string | never {
-    const basename: string | null = this.basename();
+    const basename: string | null = this.basenameOptional(ext, allowedSpecialSegments);
     if (basename === null) {
-      throw new Error(`Cannot use .basename on this path`);
+      throw new Error("This path doesn't accept '.basename(...)'.");
     } else {
       return basename;
     }
   }
 
   /**
-   * Returns a tuple composed of the stem and the extension of the basename of this Path
+   * Like `.basename(...)`, but returns `null` instead of throwing.
+   *
+   * @see basename
    */
-  stemAndExt(): IStemAndExtTuple | null {
-    return getStemAndExtOfPathSegments(this.segments, this.config);
+  basenameOptional(
+    ext?: string,
+    allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
+  ): string | null {
+    return getBasenameOfPathSegments(
+      this.segments,
+      ext,
+      allowedSpecialSegments === undefined
+        ? this.config
+        : {
+            ...this.config,
+            allowedSpecialSegments: new Set<ISpecialSegmentsAllowedForBasename>(
+              allowedSpecialSegments,
+            ),
+          },
+    );
   }
 
   /**
-   * Like .stemAndExt but throws if the returned value is null
-   * @see stemAndExt
+   * Returns a tuple composed of the stem and the extension of the basename of this Path.
+   * If this operation cannot be performed (ex: this Path is a "root"), the function throws.
    */
-  stemAndExtOrThrow(): IStemAndExtTuple | never {
-    const stemAndExt: IStemAndExtTuple | null = this.stemAndExt();
+  stemAndExt(): IStemAndExtTuple | never {
+    const stemAndExt: IStemAndExtTuple | null = this.stemAndExtOptional();
     if (stemAndExt === null) {
-      throw new Error(`Cannot use .stemAndExt on this path`);
+      throw new Error("This path doesn't accept '.stemAndExt(...)'.");
     } else {
       return stemAndExt;
     }
   }
 
-
   /**
-   * Returns the common base between this Path, and each 'paths'
-   *  - if no common base, returns null
-   * @example:
-   *  new Path('a/b/').commonBase('a/c') => './a'
-   *  new Path('/a/b/').commonBase('d/e') => null
+   * Like `.stemAndExt(...)`, but returns `null` instead of throwing.
+   *
+   * @see stemAndExt
    */
-  commonBase(
-    ...paths: IPathInput[]
-  ): Path | null {
-    const commonBase: IPathSegments | null = getCommonBaseOfManyPathSegments([
-      this.segments,
-      ...paths.map<IPathSegments>((path: IPathInput): IPathSegments => Path.of(path, this.config).segments),
-    ]);
-    return (commonBase === null)
-      ? null
-      : createPathFromPathInstance(this, commonBase);
+  stemAndExtOptional(): IStemAndExtTuple | null {
+    return getStemAndExtOfPathSegments(this.segments, this.config);
   }
 
   /**
-   * Returns the relative Path from this Path to 'path' (after normalization)
-   *  - returns null if we cannot reach 'path' from this Path
+   * Returns the common base between this Path, and each `paths`:
+   *  - if no common base are found, the function throws.
+   *
    * @example:
-   *  new Path('a/b/').relative('a/d') => '../d
-   *  new Path('a/b/').relative('/a/d') => null
+   *  `new Path('a/b/').commonBase('a/c')` => `./a`
+   *  `new Path('/a/b/').commonBase('d/e')` => throws
    */
-  relative(
-    path: IPathInput,
-  ): Path | null {
+  commonBase(...paths: IPathInput[]): Path | never {
+    const commonBase: Path | null = this.commonBaseOptional(...paths);
+    if (commonBase === null) {
+      throw new Error('These paths have no common bases.');
+    } else {
+      return commonBase;
+    }
+  }
+
+  /**
+   * Like `.commonBase(...)`, but returns `null` instead of throwing.
+   * @see commonBase
+   */
+  commonBaseOptional(...paths: IPathInput[]): Path | null {
+    const commonBase: IPathSegments | null = getCommonBaseOfManyPathSegments([
+      this.segments,
+      ...paths.map<IPathSegments>(
+        (path: IPathInput): IPathSegments => Path.of(path, this.config).segments,
+      ),
+    ]);
+    return commonBase === null ? null : createPathFromPathInstance(this, commonBase);
+  }
+
+  /**
+   * Returns the relative Path from this Path to `path` (after normalization)
+   *  - the function throw if it's not possible to reach `path` from this Path.
+   *
+   * @example:
+   *  `new Path('a/b/').relative('a/d')` => `../d`
+   *  `new Path('a/b/').relative('/a/d')` => throws
+   */
+  relative(path: IPathInput): Path | never {
+    const relativePath: Path | null = this.relativeOptional(path);
+    if (relativePath === null) {
+      throw new Error('Cannot reach `path` from this Path.');
+    } else {
+      return relativePath;
+    }
+  }
+
+  /**
+   * Like `.relative(...)`, but returns `null` instead of throwing.
+   * @see relative
+   */
+  relativeOptional(path: IPathInput): Path | null {
     const relativePath: IPathSegments | null = getRelativePathSegments(
       this.segments,
       Path.of(path, this.config).segments,
       this.config,
     );
-    return (relativePath === null)
-      ? null
-      : createPathFromPathInstance(this, relativePath);
+    return relativePath === null ? null : createPathFromPathInstance(this, relativePath);
   }
-
 
   /* MISC */
 
   /**
    * Returns a new Path composed of this Path followed by 'paths'
    *  - equivalent of path.join() of NodeJS
+   *
+   * @example:
+   *  - `new Path('./a').concat('b')` => `./a/b`
    */
-  concat(
-    ...paths: IPathInput[]
-  ): Path {
+  concat(...paths: IPathInput[]): Path {
     return createPathFromPathInstance(
       this,
       joinManyPathSegments(
         [
           this.segments,
-          ...paths.map<IPathSegments>((path: IPathInput): IPathSegments => Path.of(path, this.config).segments),
+          ...paths.map<IPathSegments>(
+            (path: IPathInput): IPathSegments => Path.of(path, this.config).segments,
+          ),
         ],
         this.config,
       ),
@@ -321,51 +332,42 @@ export class Path {
   }
 
   /**
-   * Returns a new absolute Path from this Path
-   * - if this Path is absolute, returns a cloned path,
-   * - else appends 'root' before this Path
-   * @param root - default: process.cwd()
+   * Returns a new absolute Path from this Path:
+   * - if this Path is absolute, this function returns a cloned path,
+   * - else it appends `root` before this Path
+   *
+   * @param root - default: `process.cwd()`
    */
-  resolve(
-    root?: IPathInput,
-  ): Path {
+  resolve(root?: IPathInput): Path {
     return createPathFromPathInstance(
       this,
       resolvePathSegmentsWithOptionalRoot(
         this.segments,
-        (root === void 0)
-          ? void 0
-          : Path.of(root, this.config).segments,
+        root === undefined ? undefined : Path.of(root, this.config).segments,
         this.config,
       ),
     );
   }
 
   /**
-   * Clones the path. Kind of new Path(this, config) but faster
+   * Clones the path. Kind of new Path(this, config) but faster.
    */
-  clone(
-    config?: Readonly<IPathPlatformConfig>,
-  ): Path {
-    return createPathFromPathInstance(
-      this,
-      this.segments.slice(),
-      config,
-    );
+  clone(config?: IPathPlatformConfig): Path {
+    return createPathFromPathInstance(this, this.segments.slice(), config);
   }
 
-  /* MUTATE */
+  /* CONVERT */
 
   /**
-   * Forces this Path to mutate to an absolute Path IF it is not already absolute
-   * @param root - default: process.cwd()
+   * Forces this Path to be converted to an absolute Path IF it is not already absolute.
+   *
+   * @param root - default: `process.cwd()`
    */
-  makeAbsolute(
-    root?: IPathInput,
-  ): Path {
-    const _root: IPathSegments = (root === void 0)
-      ? getProcessPathSegments(this.config)
-      : Path.of(root, this.config).segments;
+  makeAbsolute(root?: IPathInput): Path {
+    const _root: IPathSegments =
+      root === undefined
+        ? getProcessPathSegments(this.config)
+        : Path.of(root, this.config).segments;
 
     return createPathFromPathInstance(
       this,
@@ -374,35 +376,29 @@ export class Path {
   }
 
   /**
-   * Forces this Path to mutate to a relative path IF it is not already relative
-   *  => replaces Path's first segment (the root) with '.'
+   * Forces this Path to be converted to a relative path IF it is not already relative.
+   *  => it replaces Path's first segment (the root) with '.'
    */
   makeRelative(): Path {
-    return createPathFromPathInstance(
-      this,
-      makePathSegmentsAsRelative(this.segments, this.config),
-    );
+    return createPathFromPathInstance(this, makePathSegmentsAsRelative(this.segments, this.config));
   }
 
   /* TO */
 
   /**
-   * Returns the concatenated string of the different segments of this Path, separated by 'separator'
-   * @param separator - default: config.separator
+   * Returns the concatenated string of the different segments of this Path, separated by `separa
+   * tor`.
+   * @param separator - default: `config.separator`
    */
-  toString(
-    separator?: string,
-  ): string {
+  toString(separator?: string): string {
     let config: IPathPlatformConfig;
 
-    if (separator === void 0) {
+    if (separator === undefined) {
       config = this.config;
     } else if (typeof separator === 'string') {
-      config = (separator === this.config.separator)
-        ? this.config
-        : { ...this.config, separator };
+      config = separator === this.config.separator ? this.config : { ...this.config, separator };
     } else {
-      throw new TypeError(`Expected string as separator`);
+      throw new TypeError('Expected string as separator');
     }
 
     return convertPathSegmentsToStringPath(this.segments, config);
@@ -417,8 +413,3 @@ export class Path {
     return url;
   }
 }
-
-
-
-
-

@@ -1,1 +1,0 @@
-// runTests(testPath);

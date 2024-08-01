@@ -17,7 +17,7 @@ and give you fine details and tuning on your paths.
 **Example:**
 
 ```ts
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 
 const ROOT = Path.process();
 const TMP_DIR = ROOT.concat('tmp');
@@ -27,14 +27,9 @@ function rename(
   path: Path,
   newName: string,
 ): Promise<void> {
-  const newPath: Path | null = path.dirname();
-  if (newPath === null) {
-    return Promise.reject(new Error(`Cannot rename a <root>`));
-  } else {
-    return fs.rename(
-      newPath.concat(newName).toString(),
-    );
-  }
+  return fs.rename(
+    path.dirname().concat(newName).toString(),
+  );
 }
 
 await rename(DEMO_FILE, 'demo.js');
@@ -101,217 +96,191 @@ CDN: [https://cdn.skypack.dev/@lifaon/path](https://cdn.skypack.dev/@lifaon/path
 ```ts
 /** TYPES **/
 
-export type IPathInput =
-  string // the path as a string
+type IPathInput =
+  | string // the path as a string
   | IUncheckedPathSegments // the path as string segments (kind of .split('/'))
   | Path // a Path
 ;
 
-/** INTERFACES **/
-
-export interface PathConstructor {
-  readonly posix: Readonly<PathPlatformConfig>; // returns the posix configuration to provide to Path
-  readonly windows: Readonly<IWindowsPathPlatformConfig>; // returns the windows configuration to provide to Path
-  readonly generic: Readonly<PathPlatformConfig>; // returns a generic configuration to provide to Path
-  readonly currentPlatform: Readonly<PathPlatformConfig> | never; // returns the current platform configuration to provide to Path (only on NodeJs)
-
+class Path {
+  static get posix(): IPathPlatformConfig;
+  static get windows(): IWindowsPathPlatformConfig;
+  static get generic(): IPathPlatformConfig;
+  static get currentPlatform(): IPathPlatformConfig | never;
+  
   /**
-   * Returns the current process working directory as Path
+   * Returns the current process working directory as a `Path`.
    */
-  process(
-    config?: PathPlatformConfig,
-  ): Path | never;
-
+  static process(config?: IPathPlatformConfig): Path | never;
+  
   /**
-   * If 'path' is a Path, returns 'path',
-   * Else creates a Path from 'path'
-   *  => useful if you want to accept many types as the 'path' input of a function without sacrificing performances:
+   * If `path` is a `Path`, returns `path`,
+   * else creates a `Path` from `path`.
+   *  => useful if you want to accept many types as the `path` input of a function without sacrificing performances
    */
-  of(
-    path: IPathInput,
-    config?: PathPlatformConfig,
-  ): Path;
-
+  static of(path: IPathInput, config?: IPathPlatformConfig): Path;
+  
+  readonly segments: IPathSegments;
+  readonly config: IPathPlatformConfig;
+  
+  constructor(path: IPathInput, config?: IPathPlatformConfig);
+  
   /**
-   * Creates a new Path, with a specific config (or default to <generic>)
-   *  When creating a path, the input is always normalized.
-   */
-  new(
-    path: IPathInput,
-    config?: PathPlatformConfig,
-  ): Path;
-}
-
-
-export interface Path {
-  readonly segments: PathSegments; // the list of segments composing the path
-  readonly config: Readonly<PathPlatformConfig>; // the current config of the Path
-
-  /* IS */
-
-  /**
-   * Returns true if this Path is absolute
+   * Returns `true` if this Path is absolute.
    */
   isAbsolute(): boolean;
-
+  
   /**
-   * Returns true if this Path is a pure root (ex: 'c:' or '/')
+   * Returns `true` if this Path is a pure root (ex: `c:` or `/`).
    */
   isRoot(): boolean;
   
   /**
-   * Returns true if this Path is a sub-path of 'path' (after normalization)
+   * Returns true if this Path is a sub-path of `path` (after normalization).
+   *
    * @example:
-   *  new Path('a/b/').isSubPathOf('a/') => true
+   *  `new Path('a/b/').isSubPathOf('a/')` => `true`
    */
-  isSubPathOf(
-    parentPath: IPathInput,
-  ): boolean;
-
-  /* COMPARISON */
-
+  isSubPathOf(parentPath: IPathInput): boolean;
+  
   /**
-   * Returns true if this Path is equal to 'path' (after normalization)
+   * Returns `true` if this Path is equal to `path` (after normalization).
+   *
    * @example:
-   *  new Path('a/b/').equals('a/c/../b') => true
+   *  `new Path('a/b/').equals('a/c/../b')` => `true`
    */
-  equals(
-    path: IPathInput,
-  ): boolean;
-
-
-  /* GET */
-
+  equals(path: IPathInput): boolean;
+  
   /**
-   * Returns the parent directory's Path of this Path. If this Path is a pure root, returns null
+   * Returns the parent directory's Path of this Path.
+   * If this operation cannot be performed (ex: this Path is a "root"), the function throws.
+   *
    * @example:
-   *  new Path('a/b').dirname() => './a'
-   *  new Path('c:/').dirname() => null
+   *  `new Path('a/b').dirname()` => `./a`
+   *  `new Path('c:/').dirname()` => throws
    */
-  dirname(): Path | null;
-
+  dirname(): Path | never;
+  
   /**
-   * Like .dirname but throws if the returned value is null (in case the path is a pure root)
+   * Like `.dirname()`, but returns `null` instead of throwing.
+   *
    * @see dirname
    */
-  dirnameOrThrow(): Path | never;
+  dirnameOptional(): Path | null;
   
   /**
-   * Returns the basename of this Path
-   *  - if 'ext' is provided, removes 'ext' from the basename
-   *  - returns null if basename is special (relative or root) and allowedSpecialSegments doesn't include it
-   *  @param ext - default: ''
-   *  @param allowedSpecialSegments - default: new Set()
+   * Returns the basename of this Path:
+   *  - if `ext` is provided, `ext` is removed from the basename
+   *  - the function throws if the basename is special (ex: relative or root) and `allowedSpecialSegments` doesn't include it
    *
-   *  @example:
-   *    new Path('/a/b').basename() => 'b'
-   *    new Path('/').basename() => null
+   * @param ext - default: `''`
+   * @param allowedSpecialSegments - default: `new Set()`
+   *
+   * @example:
+   *  `new Path('/a/b').basename()` => 'b'
+   *  `new Path('/').basename()` => throws
    */
-  basename(
-    ext?: string,
-    allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
-  ): string | null;
-
+  basename(ext?: string, allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>): string | never;
+  
   /**
-   * Like .basename but throws if the returned value is null (in case basename is special)
+   * Like `.basename(...)`, but returns `null` instead of throwing.
+   *
    * @see basename
    */
-  basenameOrThrow(
-    ext?: string,
-    allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>,
-  ): string | never;
+  basenameOptional(ext?: string, allowedSpecialSegments?: Iterable<ISpecialSegmentsAllowedForBasename>): string | null;
   
   /**
-   * Returns a tuple composed of the stem and the extension of the basename of this Path
+   * Returns a tuple composed of the stem and the extension of the basename of this Path.
+   * If this operation cannot be performed (ex: this Path is a "root"), the function throws.
    */
-  stemAndExt(): IStemAndExtTuple | null;
-
+  stemAndExt(): IStemAndExtTuple | never;
+  
   /**
-   * Like .stemAndExt but throws if the returned value is null
+   * Like `.stemAndExt(...)`, but returns `null` instead of throwing.
+   *
    * @see stemAndExt
    */
-  stemAndExtOrThrow(): IStemAndExtTuple | never;
+  stemAndExtOptional(): IStemAndExtTuple | null;
   
   /**
-   * Returns the common base between this Path, and each 'paths'
-   *  - if no common base, returns null
+   * Returns the common base between this Path, and each `paths`:
+   *  - if no common base are found, the function throws.
+   *
    * @example:
-   *  new Path('a/b/').commonBase('a/c') => './a'
-   *  new Path('/a/b/').commonBase('d/e') => null
+   *  `new Path('a/b/').commonBase('a/c')` => `./a`
+   *  `new Path('/a/b/').commonBase('d/e')` => throws
    */
-  commonBase(
-    ...paths: IPathInput[]
-  ): Path | null;
+  commonBase(...paths: IPathInput[]): Path | never;
   
-
   /**
-   * Returns the relative Path from this Path to 'path' (after normalization)
-   *  - returns null if we cannot reach 'path' from this Path
-   * @example:
-   *  new Path('a/b/').relative('a/d') => '../d
-   *  new Path('a/b/').relative('/a/d') => null
+   * Like `.commonBase(...)`, but returns `null` instead of throwing.
+   * @see commonBase
    */
-  relative(
-    path: IPathInput,
-  ): Path | null;
-
+  commonBaseOptional(...paths: IPathInput[]): Path | null;
+  
+  /**
+   * Returns the relative Path from this Path to `path` (after normalization)
+   *  - the function throw if it's not possible to reach `path` from this Path.
+   *
+   * @example:
+   *  `new Path('a/b/').relative('a/d')` => `../d`
+   *  `new Path('a/b/').relative('/a/d')` => throws
+   */
+  relative(path: IPathInput): Path | never;
+  
+  /**
+   * Like `.relative(...)`, but returns `null` instead of throwing.
+   * @see relative
+   */
+  relativeOptional(path: IPathInput): Path | null;
+  
   /**
    * Returns a new Path composed of this Path followed by 'paths'
    *  - equivalent of path.join() of NodeJS
+   *
+   * @example:
+   *  - `new Path('./a').concat('b')` => `./a/b`
    */
-  concat(
-    ...paths: IPathInput[]
-  ): Path;
+  concat(...paths: IPathInput[]): Path;
   
   /**
-   * Returns a new absolute Path from this Path
-   * - if this Path is absolute, returns a cloned path,
-   * - else appends 'root' before this Path
-   * @param root - default: process.cwd()
+   * Returns a new absolute Path from this Path:
+   * - if this Path is absolute, this function returns a cloned path,
+   * - else it appends `root` before this Path
+   *
+   * @param root - default: `process.cwd()`
    */
   resolve(root?: IPathInput): Path;
-
+  
   /**
-   * Clones the path. Kind of new Path(this, config) but faster
+   * Clones the path. Kind of new Path(this, config) but faster.
    */
-  clone(
-    config?: Readonly<IPathPlatformConfig>,
-  ): Path;
-
-
-  /* MUTATE */
-
+  clone(config?: IPathPlatformConfig): Path;
+  
   /**
-   * Forces this Path to mutate to an absolute Path IF it is not already absolute
-   * @param root - default: process.cwd()
+   * Forces this Path to be converted to an absolute Path IF it is not already absolute.
+   *
+   * @param root - default: `process.cwd()`
    */
-  makeAbsolute(
-    root?: IPathInput,
-  ): Path;
-
+  makeAbsolute(root?: IPathInput): Path;
+  
   /**
-   * Forces this Path to mutate to a relative path IF it is not already relative
-   *  => replaces Path's first segment (the root) with '.'
+   * Forces this Path to be converted to a relative path IF it is not already relative.
+   *  => it replaces Path's first segment (the root) with '.'
    */
   makeRelative(): Path;
-
-
-  /* TO */
-
+  
   /**
-   * Returns the concatenated string of the different segments of this Path, separated by 'separator'
-   * @param separator - default: config.separator
+   * Returns the concatenated string of the different segments of this Path, separated by `separa
+   * tor`.
+   * @param separator - default: `config.separator`
    */
-  toString(
-    separator?: string,
-  ): string;
+  toString(separator?: string): string;
   
   /**
    * Returns a 'file://' url having this Path as pathname
    */
   toURL(): URL;
-
-}
 ```
 
 

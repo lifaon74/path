@@ -1,11 +1,16 @@
 {
   "name": "@lifaon/path",
-  "version": "2.1.0",
-  "description": "Useful tool to manage paths like the URL object",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/lifaon74/path"
+  "version": "3.0.0",
+  "type": "module",
+  "main": "./index.js",
+  "scripts": {
+    "fb:build": "node fabrique/actions/build.js",
+    "fb:format": "prettier --write --ignore-unknown --config ./.prettierrc \"src/**/*.{js,jsx,ts,tsx,html,css,scss}\"",
+    "fb:test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "fb:prod": "node fabrique/actions/build.js && cd dist && npm publish --access public --registry https://registry.npmjs.org",
+    "fb:dev": "node fabrique/actions/build.js --dev && cd dist && npm publish --quiet --registry http://localhost:4873"
   },
+  "description": "Useful tool to manage paths like the URL object",
   "keywords": [
     "Path",
     "URL"
@@ -13,5 +18,22 @@
   "author": "Valentin Richard",
   "license": "MIT",
   "access": "public",
-  "dependencies": {}
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lifaon74/path.git"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-organize-imports": "^4.0.0",
+    "ts-jest": "^29.2.2",
+    "typescript": "^5.5.3"
+  },
+  "packageManager": "yarn@4.3.1",
+  "sideEffects": false,
+  "fabrique": {
+    "version": "0.1.0",
+    "type": "lib"
+  }
 }
