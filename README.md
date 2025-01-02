@@ -4,6 +4,12 @@
 ![npm type definitions](https://img.shields.io/npm/types/@lifaon/path.svg)
 ![npm size](https://img.shields.io/bundlephobia/minzip/@lifaon/path)
 
+---
+
+**REPOSITORY MOVED TO [@xstd/path][https://github.com/xstd-js/path]**
+
+---
+
 ## Path
 
 This library provides a `Path` class to manage paths, somehow like the [URL class](https://developer.mozilla.org/en-US/docs/Web/API/URL).
