@@ -6,7 +6,7 @@
 
 ---
 
-**REPOSITORY MOVED TO [@xstd/path][https://github.com/xstd-js/path]**
+**REPOSITORY MOVED TO [@xstd/path](https://github.com/xstd-js/path)**
 
 ---
 
